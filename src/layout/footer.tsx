@@ -4,7 +4,7 @@ import './footer.less';
 import { getSearchObj } from '@/helpers/location';
 
 const Footer: React.FC = () => {
-  const user = getSearchObj().user || 'visiky';
+  const user = getSearchObj().user || 'marszhongx';
 
   return (
     <footer>
@@ -27,7 +27,7 @@ const Footer: React.FC = () => {
         </div>
 
         <a
-          href={'https://github.com/visiky/resume.git'}
+          href={'https://github.com/marszhongx/resume'}
           style={{ position: 'absolute', right: '8px', fontSize: '12px' }}
           target="_blank"
         >

@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/r/:user/:branch/resume.json",
+      "destination": "https://raw.githubusercontent.com/:user/:user/:branch/resume.json"
+    }
+  ]
+}

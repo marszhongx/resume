@@ -1,9 +1,8 @@
 import React, { useCallback, useState, useEffect, useRef } from 'react';
-import { Button, Affix, Upload, Spin, message, Alert, Modal } from 'antd';
+import { Button, Affix, Upload, Spin, message, Alert } from 'antd';
 import type { RcFile } from 'antd/lib/upload';
 import _ from 'lodash-es';
 import qs from 'query-string';
-import jsonUrl from 'json-url';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { getLanguage } from '@/i18n';
 import { useModeSwitcher } from '@/hooks/useModeSwitcher';
@@ -14,19 +13,23 @@ import { copyToClipboard } from '@/helpers/copy-to-board';
 import { getDevice } from '@/helpers/detect-device';
 import { exportDataToLocal } from '@/helpers/export-to-local';
 import { getConfig, saveToLocalStorage } from '@/helpers/store-to-local';
+import { RESUME_INFO } from '@/data/resume';
 import { fetchResume } from '@/helpers/fetch-resume';
-import { Drawer } from './Drawer';
+const Drawer = React.lazy(() =>
+  import('./Drawer').then(m => ({ default: m.Drawer }))
+);
 import { Resume } from './Resume';
 import type { ResumeConfig, ThemeConfig } from './types';
 
 import './index.less';
 
-const codec = jsonUrl('lzma');
+const getCodec = () =>
+  import('json-url').then(({ default: jsonUrl }) => jsonUrl('lzma'));
 
 export const Page: React.FC = () => {
   const lang = getLanguage();
   const intl = useIntl();
-  const user = getSearchObj().user || 'visiky';
+  const user = getSearchObj().user || 'marszhongx';
 
   const [, mode, changeMode] = useModeSwitcher({});
 
@@ -79,7 +82,7 @@ export const Page: React.FC = () => {
 
   useEffect(() => {
     const user = (query.user || '') as string;
-    const branch = (query.branch || 'master') as string;
+    const branch = (query.branch || 'main') as string;
     const mode = query.mode;
 
     function store(data) {
@@ -93,29 +96,27 @@ export const Page: React.FC = () => {
     }
 
     if (!mode) {
-      const link = `https://github.com/${user}/${user}/tree/${branch}`;
+      // 拉取失败（用户名/分支不存在或网络不可达）时回退到内置数据，避免空白页
       fetchResume(lang, branch, user)
         .then(data => store(data))
         .catch(() => {
-          Modal.info({
-            title: <FormattedMessage id="获取简历信息失败" />,
-            content: (
-              <div>
-                请检查用户名 {user} 是否正确或者简历信息是否在
-                <a href={link} target="_blank">{`${link}/resume.json`}</a>下
-              </div>
-            ),
-            okText: <FormattedMessage id="进入在线编辑" />, // intl.formatMessage({ id: '进入在线编辑' }),
-            onOk: () => {
-              changeMode('edit');
-            },
-          });
+          console.warn(
+            `[resume] 获取 ${user}/${branch} 的简历失败，展示内置数据`
+          );
+          store(
+            _.omit(
+              customAssign({}, RESUME_INFO, _.get(RESUME_INFO, ['locales', lang])),
+              ['locales']
+            ) as ResumeConfig
+          );
         });
     } else {
       if (query.data) {
-        codec.decompress(query.data).then(data => {
-          store(JSON.parse(data));
-        });
+        getCodec()
+          .then(codec => codec.decompress(query.data as string))
+          .then(data => {
+            store(JSON.parse(data));
+          });
       } else {
         getConfig(lang, branch, user).then(data => {
           store(data);
@@ -221,13 +222,15 @@ export const Page: React.FC = () => {
 
   const handleSharing = () => {
     const fullConfig = getConfigJson();
-    codec.compress(fullConfig).then(data => {
-      const url = new URL(window.location.href);
-      url.searchParams.set('data', data);
+    getCodec()
+      .then(codec => codec.compress(fullConfig))
+      .then(data => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('data', data);
 
-      console.log('sharing url', url.toString());
-      copyToClipboard(url.toString());
-    });
+        console.log('sharing url', url.toString());
+        copyToClipboard(url.toString());
+      });
   };
 
   return (
@@ -251,16 +254,16 @@ export const Page: React.FC = () => {
                       cursor: 'pointer',
                     }}
                     onClick={() => {
-                      const user = query.user || 'visiky';
+                      const user = query.user || 'marszhongx';
                       window.open(`https://github.com/${user}/${user}`);
                     }}
                   >
-                    {`${query.user || 'visiky'}'s resumeInfo`}
+                    {`${query.user || 'marszhongx'}'s resumeInfo`}
                   </span>
                   <span>
-                    {`（https://github.com/${query.user || 'visiky'}/${
-                      query.user || 'visiky'
-                    }/blob/${query.branch || 'master'}/resume.json）`}
+                    {`（https://github.com/${query.user || 'marszhongx'}/${
+                      query.user || 'marszhongx'
+                    }/blob/${query.branch || 'main'}/resume.json）`}
                   </span>
                 </span>
               </span>
@@ -281,15 +284,17 @@ export const Page: React.FC = () => {
             <React.Fragment>
               <Affix offsetTop={0}>
                 <Button.Group className="btn-group">
-                  <Drawer
-                    value={config}
-                    onValueChange={onConfigChange}
-                    theme={theme}
-                    onThemeChange={onThemeChange}
-                    // @ts-ignore
-                    template={query.template || 'template1'}
-                    onTemplateChange={updateTemplate}
-                  />
+                  <React.Suspense fallback={null}>
+                    <Drawer
+                      value={config}
+                      onValueChange={onConfigChange}
+                      theme={theme}
+                      onThemeChange={onThemeChange}
+                      // @ts-ignore
+                      template={query.template || 'template1'}
+                      onTemplateChange={updateTemplate}
+                    />
+                  </React.Suspense>
                   <Button type="primary" onClick={copyConfig}>
                     <FormattedMessage id="复制配置" />
                   </Button>

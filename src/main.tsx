@@ -1,0 +1,27 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+import 'antd/es/affix/style';
+import 'antd/es/alert/style';
+import 'antd/es/avatar/style';
+import 'antd/es/badge/style';
+import 'antd/es/button/style';
+import 'antd/es/card/style';
+import 'antd/es/checkbox/style';
+import 'antd/es/collapse/style';
+import 'antd/es/drawer/style';
+import 'antd/es/dropdown/style';
+import 'antd/es/form/style';
+import 'antd/es/input/style';
+import 'antd/es/input-number/style';
+import 'antd/es/message/style';
+import 'antd/es/modal/style';
+import 'antd/es/popover/style';
+import 'antd/es/radio/style';
+import 'antd/es/rate/style';
+import 'antd/es/select/style';
+import 'antd/es/spin/style';
+import 'antd/es/tag/style';
+import 'antd/es/upload/style';
+import Page from '@/pages/index';
+
+ReactDOM.render(<Page />, document.getElementById('root'));

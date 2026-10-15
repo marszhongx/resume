@@ -20,12 +20,8 @@ node_modules
 # webstorm editor
 .idea
 
-# gatsby files
-.cache/
-public
-
-# package lock file
-package-lock.json
+# build output
+dist
 
 # temp
 **temp**
